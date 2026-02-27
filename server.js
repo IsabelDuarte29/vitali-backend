@@ -20,6 +20,7 @@ const muestrasRoutes = require('./routes/muestras');
 const recipientesRoutes = require('./routes/recipientes');
 const estudiosRoutes = require('./routes/estudios');
 const analitosRoutes = require('./routes/analitos');
+const analitosOpcionesRoutes = require('./routes/analitos_opciones');
 
 app.use('/pacientes', pacientesRoutes);
 app.use('/doctores', doctoresRoutes);
@@ -28,6 +29,7 @@ app.use('/muestras', muestrasRoutes);
 app.use('/recipientes', recipientesRoutes);
 app.use('/estudios', estudiosRoutes);
 app.use('/analitos', analitosRoutes);
+app.use('/analitos-opciones', analitosOpcionesRoutes);
 
 /* ============================
    Ruta base
