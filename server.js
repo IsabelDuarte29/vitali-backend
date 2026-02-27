@@ -15,15 +15,19 @@ app.use(express.urlencoded({ extended: true }));
 ============================ */
 const pacientesRoutes = require('./routes/pacientes');
 const doctoresRoutes = require('./routes/doctores');
+const usuariosRoutes = require('./routes/usuarios');
+const muestrasRoutes = require('./routes/muestras');
 
 app.use('/pacientes', pacientesRoutes);
 app.use('/doctores', doctoresRoutes);
+app.use('/usuarios', usuariosRoutes);
+app.use('/muestras', muestrasRoutes);
 
 /* ============================
    Ruta base
 ============================ */
 app.get('/', (req, res) => {
-  res.status(200).json({
+  res.json({
     sistema: 'API Laboratorio Clínico',
     estado: 'Activo'
   });
