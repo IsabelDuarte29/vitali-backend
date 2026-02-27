@@ -17,11 +17,15 @@ const pacientesRoutes = require('./routes/pacientes');
 const doctoresRoutes = require('./routes/doctores');
 const usuariosRoutes = require('./routes/usuarios');
 const muestrasRoutes = require('./routes/muestras');
+const recipientesRoutes = require('./routes/recipientes');
+const estudiosRoutes = require('./routes/estudios');
 
 app.use('/pacientes', pacientesRoutes);
 app.use('/doctores', doctoresRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/muestras', muestrasRoutes);
+app.use('/recipientes', recipientesRoutes);
+app.use('/estudios', estudiosRoutes);
 
 /* ============================
    Ruta base
