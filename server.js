@@ -21,6 +21,11 @@ const recipientesRoutes = require('./routes/recipientes');
 const estudiosRoutes = require('./routes/estudios');
 const analitosRoutes = require('./routes/analitos');
 const analitosOpcionesRoutes = require('./routes/analitos_opciones');
+const valoresReferenciaRoutes = require('./routes/analitos_valores_referencia');
+const estudiosAnalitosRoutes = require('./routes/estudios_analitos');
+const ordenesRoutes = require('./routes/ordenes');
+const ordenesEstudiosRoutes = require('./routes/ordenes_estudios');
+const resultadosRoutes = require('./routes/resultados');
 
 app.use('/pacientes', pacientesRoutes);
 app.use('/doctores', doctoresRoutes);
@@ -30,6 +35,11 @@ app.use('/recipientes', recipientesRoutes);
 app.use('/estudios', estudiosRoutes);
 app.use('/analitos', analitosRoutes);
 app.use('/analitos-opciones', analitosOpcionesRoutes);
+app.use('/valores-referencia', valoresReferenciaRoutes);
+app.use('/estudios-analitos', estudiosAnalitosRoutes);
+app.use('/ordenes', ordenesRoutes);
+app.use('/ordenes-estudios', ordenesEstudiosRoutes);
+app.use('/resultados', resultadosRoutes);
 
 /* ============================
    Ruta base
