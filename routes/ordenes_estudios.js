@@ -54,40 +54,123 @@ router.get('/orden/:id', (req, res) => {
    POST - Agregar estudio a orden
 ============================ */
 router.post('/', (req, res) => {
-  const {
-    id_orden,
-    id_estudio,
-    precio,
-    dias_proceso
-  } = req.body;
 
-  if (!id_orden || !id_estudio || !precio || !dias_proceso) {
+  const { id_orden, id_estudio } = req.body;
+
+  if (!id_orden || !id_estudio) {
     return res.status(400).json({
-      error: 'Todos los campos son obligatorios'
+      error: 'id_orden e id_estudio son obligatorios'
     });
   }
 
-  const sql = `
-    INSERT INTO ordenes_estudios
-    (id_orden, id_estudio, precio, dias_proceso)
-    VALUES (?, ?, ?, ?)
+  /* ============================
+     1. Obtener precio y dias_proceso del estudio
+  ============================ */
+
+  const sqlEstudio = `
+    SELECT precio, dias_proceso
+    FROM estudios
+    WHERE id_estudio = ?
   `;
 
-  db.query(
-    sql,
-    [id_orden, id_estudio, precio, dias_proceso],
-    (err, result) => {
-      if (err) {
-        console.error('Error POST orden_estudio:', err);
-        return res.status(500).json({ error: 'Error al agregar estudio a la orden' });
-      }
+  db.query(sqlEstudio, [id_estudio], (err, estudio) => {
 
-      res.status(201).json({
-        message: 'Estudio agregado a la orden',
-        id: result.insertId
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Error obteniendo estudio' });
+    }
+
+    if (estudio.length === 0) {
+      return res.status(404).json({
+        error: 'Estudio no encontrado'
       });
     }
-  );
+
+    const precio = estudio[0].precio;
+    const dias = estudio[0].dias_proceso;
+
+    /* ============================
+       2. Insertar estudio en la orden
+    ============================ */
+
+    const sqlInsert = `
+      INSERT INTO ordenes_estudios
+      (id_orden, id_estudio, precio, dias_proceso)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    db.query(sqlInsert, [id_orden, id_estudio, precio, dias], (err) => {
+
+      if (err) {
+        console.error(err);
+        return res.status(500).json({
+          error: 'Error agregando estudio'
+        });
+      }
+
+      /* ============================
+         3. Obtener analitos del estudio
+      ============================ */
+
+      const sqlAnalitos = `
+        SELECT id_analito
+        FROM estudios_analitos
+        WHERE id_estudio = ?
+        ORDER BY orden ASC
+      `;
+
+      db.query(sqlAnalitos, [id_estudio], (err, analitos) => {
+
+        if (err) {
+          console.error(err);
+          return res.status(500).json({
+            error: 'Error obteniendo analitos'
+          });
+        }
+
+        if (analitos.length === 0) {
+          return res.json({
+            message: 'Estudio agregado pero no tiene analitos'
+          });
+        }
+
+        /* ============================
+           4. Crear resultados automáticamente
+        ============================ */
+
+        const valores = analitos.map(a => [
+          id_orden,
+          id_estudio,
+          a.id_analito
+        ]);
+
+        const sqlResultados = `
+          INSERT INTO resultados
+          (id_orden, id_estudio, id_analito)
+          VALUES ?
+        `;
+
+        db.query(sqlResultados, [valores], (err) => {
+
+          if (err) {
+            console.error(err);
+            return res.status(500).json({
+              error: 'Error generando resultados'
+            });
+          }
+
+          res.status(201).json({
+            message: 'Estudio agregado y analitos generados automáticamente'
+          });
+
+        });
+
+      });
+
+    });
+
+  });
+
 });
 
 /* ============================

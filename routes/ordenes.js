@@ -2,6 +2,43 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+function generarFolio(callback) {
+
+  const hoy = new Date();
+
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const anio = String(hoy.getFullYear()).slice(-2);
+
+  const prefijo = `${dia}${mes}${anio}`;
+
+  const sql = `
+    SELECT folio 
+    FROM ordenes
+    WHERE folio LIKE ?
+    ORDER BY folio DESC
+    LIMIT 1
+  `;
+
+  db.query(sql, [`${prefijo}%`], (err, results) => {
+
+    if (err) return callback(err);
+
+    let consecutivo = 1;
+
+    if (results.length > 0) {
+      const ultimo = results[0].folio;
+      consecutivo = parseInt(ultimo.slice(-3)) + 1;
+    }
+
+    const nuevoFolio = prefijo + String(consecutivo).padStart(3, '0');
+
+    callback(null, nuevoFolio);
+
+  });
+
+}
+
 /* ============================
    GET - Todas las órdenes
 ============================ */
@@ -55,47 +92,60 @@ router.get('/:id', (req, res) => {
    POST - Crear orden
 ============================ */
 router.post('/', (req, res) => {
+
   const {
-    folio,
     id_paciente,
     id_doctor,
     observaciones,
     id_usuario
   } = req.body;
 
-  if (!folio || !id_paciente || !id_doctor || !id_usuario) {
+  if (!id_paciente || !id_doctor || !id_usuario) {
     return res.status(400).json({
-      error: 'folio, id_paciente, id_doctor e id_usuario son obligatorios'
+      error: 'id_paciente, id_doctor e id_usuario son obligatorios'
     });
   }
 
-  const sql = `
-    INSERT INTO ordenes
-    (folio, id_paciente, id_doctor, observaciones, id_usuario)
-    VALUES (?, ?, ?, ?, ?)
-  `;
+  generarFolio((err, folio) => {
 
-  db.query(
-    sql,
-    [
-      folio,
-      id_paciente,
-      id_doctor,
-      observaciones || 'Sin Observaciones',
-      id_usuario
-    ],
-    (err, result) => {
-      if (err) {
-        console.error('Error POST orden:', err);
-        return res.status(500).json({ error: 'Error al crear orden' });
-      }
-
-      res.status(201).json({
-        message: 'Orden creada correctamente',
-        id: result.insertId
-      });
+    if (err) {
+      console.error('Error generando folio:', err);
+      return res.status(500).json({ error: 'Error generando folio' });
     }
-  );
+
+    const sql = `
+      INSERT INTO ordenes
+      (folio, id_paciente, id_doctor, observaciones, id_usuario)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [
+        folio,
+        id_paciente,
+        id_doctor,
+        observaciones || 'Sin Observaciones',
+        id_usuario
+      ],
+      (err, result) => {
+
+        if (err) {
+          console.error('Error creando orden:', err);
+          return res.status(500).json({ error: 'Error al crear orden' });
+        }
+
+        res.status(201).json({
+          message: 'Orden creada correctamente',
+          folio: folio,
+          id: result.insertId
+        });
+
+      }
+    );
+
+  });
+
 });
 
 /* ============================
