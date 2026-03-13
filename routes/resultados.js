@@ -79,6 +79,58 @@ function evaluarVR(db, { id_orden, id_analito, valor_numerico }, callback) {
 }
 
 /* ==========================================
+   ACTUALIZAR ESTADO DE LA ORDEN
+========================================== */
+
+function actualizarEstadoOrden(id_orden) {
+
+  const sql = `
+    SELECT
+      COUNT(*) total,
+      SUM(CASE WHEN estatus='PENDIENTE' THEN 1 ELSE 0 END) pendientes,
+      SUM(CASE WHEN estatus='EN_PROCESO' THEN 1 ELSE 0 END) proceso,
+      SUM(CASE WHEN estatus='CAPTURADO' THEN 1 ELSE 0 END) capturados,
+      SUM(CASE WHEN estatus='VALIDADO' THEN 1 ELSE 0 END) validados
+    FROM ordenes_estudios
+    WHERE id_orden = ?
+  `;
+
+  db.query(sql, [id_orden], (err, rows) => {
+
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    const { total, pendientes, proceso, capturados, validados } = rows[0];
+
+    let estatus = 'PENDIENTE';
+
+    if (proceso > 0) {
+      estatus = 'EN_PROCESO';
+    }
+
+    if (capturados === total && total > 0) {
+      estatus = 'CAPTURADO';
+    }
+
+    if (validados === total && total > 0) {
+      estatus = 'VALIDADO';
+    }
+
+    const sqlUpdate = `
+      UPDATE ordenes
+      SET estatus = ?
+      WHERE id_orden = ?
+    `;
+
+    db.query(sqlUpdate, [estatus, id_orden]);
+
+  });
+
+}
+
+/* ==========================================
    ACTUALIZAR ESTADO DEL ESTUDIO
 ========================================== */
 
@@ -136,7 +188,13 @@ function actualizarEstadoEstudio(id_orden, id_estudio) {
       AND id_estudio = ?
     `;
 
-    db.query(sqlUpdate, [estatus, id_orden, id_estudio]);
+    db.query(sqlUpdate, [estatus, id_orden, id_estudio], (err) => {
+
+      if (err) console.error(err);
+
+      actualizarEstadoOrden(id_orden);
+
+    });
 
   });
 
@@ -219,10 +277,6 @@ router.put('/:id', (req, res) => {
         .replace(/[\u0300-\u036f]/g, "")
         .toUpperCase();
 
-      /* ==========================
-         NUMÉRICO / REFERENCIADO
-      ========================== */
-
       if (tipo === 'NUMERICO' || tipo === 'REFERENCIADO') {
 
         evaluarVR(db, resultado, (err, evaluacion) => {
@@ -244,10 +298,6 @@ router.put('/:id', (req, res) => {
         });
 
       }
-
-      /* ==========================
-         SELECCIÓN
-      ========================== */
 
       else if (tipo === 'SELECCION') {
 
@@ -280,10 +330,6 @@ router.put('/:id', (req, res) => {
         });
 
       }
-
-      /* ==========================
-         TEXTO
-      ========================== */
 
       else {
 
