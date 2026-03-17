@@ -1,48 +1,69 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const verificarToken = require('../middleware/authMiddleware');
+const verificarRol = require('../middleware/rolesMiddleware');
 
 /* ============================
    GET - Todos los estudios
 ============================ */
-router.get('/', (req, res) => {
+router.get('/',
+verificarToken,
+verificarRol('RECEPCIONISTA','QUIMICO'),
+(req, res) => {
+
   const sql = 'SELECT * FROM estudios ORDER BY id_estudio DESC';
 
   db.query(sql, (err, results) => {
+
     if (err) {
       console.error('Error GET estudios:', err);
       return res.status(500).json({ error: 'Error al obtener estudios' });
     }
 
     res.json(results);
+
   });
+
 });
 
 /* ============================
    GET - Solo activos
 ============================ */
-router.get('/activos/lista', (req, res) => {
+router.get('/activos/lista',
+verificarToken,
+verificarRol('RECEPCIONISTA','QUIMICO'),
+(req, res) => {
+
   const sql = 'SELECT * FROM estudios WHERE activo = 1 ORDER BY nombre_estudio ASC';
 
   db.query(sql, (err, results) => {
+
     if (err) {
       console.error('Error GET estudios activos:', err);
       return res.status(500).json({ error: 'Error al obtener estudios activos' });
     }
 
     res.json(results);
+
   });
+
 });
 
 /* ============================
    GET - Estudio por ID
 ============================ */
-router.get('/:id', (req, res) => {
+router.get('/:id',
+verificarToken,
+verificarRol('RECEPCIONISTA','QUIMICO'),
+(req, res) => {
+
   const { id } = req.params;
 
   const sql = 'SELECT * FROM estudios WHERE id_estudio = ?';
 
   db.query(sql, [id], (err, results) => {
+
     if (err) {
       console.error('Error GET estudio:', err);
       return res.status(500).json({ error: 'Error al buscar estudio' });
@@ -53,13 +74,19 @@ router.get('/:id', (req, res) => {
     }
 
     res.json(results[0]);
+
   });
+
 });
 
 /* ============================
    POST - Crear estudio
 ============================ */
-router.post('/', (req, res) => {
+router.post('/',
+verificarToken,
+verificarRol('ADMIN'),
+(req, res) => {
+
   const {
     clave,
     nombre_estudio,
@@ -117,6 +144,7 @@ router.post('/', (req, res) => {
       precio_competencia
     ],
     (err, result) => {
+
       if (err) {
         console.error('Error POST estudio:', err);
         return res.status(500).json({ error: 'Error al crear estudio' });
@@ -126,14 +154,20 @@ router.post('/', (req, res) => {
         message: 'Estudio creado correctamente',
         id: result.insertId
       });
+
     }
   );
+
 });
 
 /* ============================
    PUT - Actualizar estudio
 ============================ */
-router.put('/:id', (req, res) => {
+router.put('/:id',
+verificarToken,
+verificarRol('ADMIN'),
+(req, res) => {
+
   const { id } = req.params;
   const datos = req.body;
 
@@ -143,6 +177,7 @@ router.put('/:id', (req, res) => {
   `;
 
   db.query(sql, [datos, id], (err, result) => {
+
     if (err) {
       console.error('Error PUT estudio:', err);
       return res.status(500).json({ error: 'Error al actualizar estudio' });
@@ -153,13 +188,19 @@ router.put('/:id', (req, res) => {
     }
 
     res.json({ message: 'Estudio actualizado correctamente' });
+
   });
+
 });
 
 /* ============================
    PATCH - Activar / Desactivar
 ============================ */
-router.patch('/:id/estado', (req, res) => {
+router.patch('/:id/estado',
+verificarToken,
+verificarRol('ADMIN'),
+(req, res) => {
+
   const { id } = req.params;
   const { activo } = req.body;
 
@@ -168,14 +209,17 @@ router.patch('/:id/estado', (req, res) => {
     WHERE id_estudio = ?
   `;
 
-  db.query(sql, [activo, id], (err, result) => {
+  db.query(sql, [activo, id], (err) => {
+
     if (err) {
       console.error('Error PATCH estudio:', err);
       return res.status(500).json({ error: 'Error al actualizar estado' });
     }
 
     res.json({ message: 'Estado actualizado correctamente' });
+
   });
+
 });
 
 module.exports = router;

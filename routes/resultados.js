@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const verificarToken = require('../middleware/authMiddleware');
 
 /* ==========================================
    FUNCIÓN EVALUAR VALORES DE REFERENCIA
@@ -204,7 +205,7 @@ function actualizarEstadoEstudio(id_orden, id_estudio) {
    GET RESULTADOS POR ORDEN
 ========================================== */
 
-router.get('/orden/:id', (req, res) => {
+router.get('/orden/:id', verificarToken, (req, res) => {
 
   const { id } = req.params;
 
@@ -238,7 +239,7 @@ router.get('/orden/:id', (req, res) => {
    PUT ACTUALIZAR RESULTADO
 ========================================== */
 
-router.put('/:id', (req, res) => {
+router.put('/:id', verificarToken, (req, res) => {
 
   const { id } = req.params;
   const datos = req.body;
@@ -351,7 +352,7 @@ router.put('/:id', (req, res) => {
    VALIDAR RESULTADO
 ========================================== */
 
-router.patch('/:id/validar', (req, res) => {
+router.patch('/:id/validar', verificarToken, (req, res) => {
 
   const { id } = req.params;
 

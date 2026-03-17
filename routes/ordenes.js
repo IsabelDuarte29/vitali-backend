@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const verificarToken = require('../middleware/authMiddleware');
 
 function generarFolio(callback) {
 
@@ -42,7 +43,8 @@ function generarFolio(callback) {
 /* ============================
    GET - Todas las órdenes
 ============================ */
-router.get('/', (req, res) => {
+router.get('/', verificarToken, (req, res) => {
+
   const sql = `
     SELECT o.*, 
            CONCAT(p.nombre, ' ', p.apellido_paterno) AS paciente,
@@ -54,19 +56,23 @@ router.get('/', (req, res) => {
   `;
 
   db.query(sql, (err, results) => {
+
     if (err) {
       console.error('Error GET ordenes:', err);
       return res.status(500).json({ error: 'Error al obtener órdenes' });
     }
 
     res.json(results);
+
   });
+
 });
 
 /* ============================
    GET - Orden por ID
 ============================ */
-router.get('/:id', (req, res) => {
+router.get('/:id', verificarToken, (req, res) => {
+
   const { id } = req.params;
 
   const sql = `
@@ -75,6 +81,7 @@ router.get('/:id', (req, res) => {
   `;
 
   db.query(sql, [id], (err, results) => {
+
     if (err) {
       console.error('Error GET orden:', err);
       return res.status(500).json({ error: 'Error al buscar orden' });
@@ -85,13 +92,15 @@ router.get('/:id', (req, res) => {
     }
 
     res.json(results[0]);
+
   });
+
 });
 
 /* ============================
    POST - Crear orden
 ============================ */
-router.post('/', (req, res) => {
+router.post('/', verificarToken, (req, res) => {
 
   const {
     id_paciente,
@@ -151,7 +160,8 @@ router.post('/', (req, res) => {
 /* ============================
    PUT - Actualizar orden
 ============================ */
-router.put('/:id', (req, res) => {
+router.put('/:id', verificarToken, (req, res) => {
+
   const { id } = req.params;
   const datos = req.body;
 
@@ -162,6 +172,7 @@ router.put('/:id', (req, res) => {
   `;
 
   db.query(sql, [datos, id], (err, result) => {
+
     if (err) {
       console.error('Error PUT orden:', err);
       return res.status(500).json({ error: 'Error al actualizar orden' });
@@ -172,13 +183,16 @@ router.put('/:id', (req, res) => {
     }
 
     res.json({ message: 'Orden actualizada correctamente' });
+
   });
+
 });
 
 /* ============================
    PATCH - Cambiar estatus
 ============================ */
-router.patch('/:id/estatus', (req, res) => {
+router.patch('/:id/estatus', verificarToken, (req, res) => {
+
   const { id } = req.params;
   const { estatus } = req.body;
 
@@ -189,13 +203,16 @@ router.patch('/:id/estatus', (req, res) => {
   `;
 
   db.query(sql, [estatus, id], (err) => {
+
     if (err) {
       console.error('Error PATCH estatus:', err);
       return res.status(500).json({ error: 'Error al actualizar estatus' });
     }
 
     res.json({ message: 'Estatus actualizado correctamente' });
+
   });
+
 });
 
 module.exports = router;
